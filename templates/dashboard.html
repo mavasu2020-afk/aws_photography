@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Yojeong Photoshop</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Purple & White Theme Palette */
+        --primary-purple: #570a88;
+        --sidebar-bg: #2e0249;
+        --main-bg: #f4f7fe;
+        --card-bg: #ffffff;
+        --text-main: #1f1c2c;
+        --text-muted: #718096;
+        --accent-lavender: #e0d1f0;
+        --success: #10b981;
+        --danger: #ef4444;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        background: var(--main-bg);
+        color: var(--text-main);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: var(--sidebar-bg);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .sidebar h2 {
+        color: white;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 15px;
+      }
+      .sidebar a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 0.9rem;
+      }
+      .sidebar a:hover,
+      .sidebar a.active-link {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-weight: 600;
+      }
+
+      /* Main Content */
+      .main {
+        flex: 1;
+        padding: 40px;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+      }
+      .section {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+      .section.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        color: var(--sidebar-bg);
+        margin-top: 0;
+      }
+
+      .card {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--sidebar-bg);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        margin-bottom: 15px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: var(--text-main);
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+
+      textarea {
+        height: 100px;
+        resize: none;
+      }
+
+      .btn {
+        background: var(--primary-purple);
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        width: 100%;
+        transition: 0.2s;
+      }
+      .btn:hover {
+        background: #3d0761;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(87, 10, 136, 0.2);
+      }
+
+      /* Table & Status */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        text-align: left;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        padding: 15px 10px;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--accent-lavender);
+      }
+      td {
+        padding: 15px 10px;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #edf2f7;
+      }
+
+      .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+      }
+      .status-Pending {
+        background: #fffaf0;
+        color: #f59e0b;
+      }
+      .status-Confirmed,
+      .status-Upcoming,
+      .status-Today {
+        background: #f0fff4;
+        color: var(--success);
+      }
+      .status-Completed {
+        background: #edf2f7;
+        color: var(--text-muted);
+      }
+      .status-Cancelled {
+        background: #fff5f5;
+        color: var(--danger);
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+      }
+      .gallery-item {
+        text-align: center;
+      }
+      .gallery-item img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--accent-lavender);
+      }
+      .gallery-item p {
+        font-size: 0.8rem;
+        margin-top: 8px;
+        color: var(--text-muted);
+      }
+
+      .profile-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--accent-lavender);
+        color: var(--primary-purple);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>YOJEONG</h2>
+      <a onclick="showSection('home')" id="link-home" class="active-link"
+        >Dashboard</a
+      >
+      <a onclick="showSection('photographers')" id="link-photographers"
+        >Photographers</a
+      >
+      <a onclick="showSection('bookings')" id="link-bookings">My Bookings</a>
+      <a onclick="showSection('gallery')" id="link-gallery">My Gallery</a>
+      <a onclick="showSection('feedback')" id="link-feedback">Give Feedback</a>
+      <a onclick="showSection('settings')" id="link-settings">Settings</a>
+      <a href="/logout" style="margin-top: auto; color: #feb2b2">Logout</a>
+    </div>
+
+    <div class="main">
+      <div id="home" class="section active">
+        <h1>Welcome back, {{ name }}!</h1>
+        <div class="card" style="border-left: 5px solid var(--primary-purple)">
+          <h2 style="color: var(--sidebar-bg)">Book an Event Session</h2>
+          <form action="/book_session" method="POST">
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
+            >
+              <div>
+                <label>Event Type</label>
+                <select name="session_type">
+                  <option value="Wedding">Wedding</option>
+                  <option value="Engagement">Engagement</option>
+                  <option value="Baby Shower">Baby Shower</option>
+                  <option value="Proposal">Proposal</option>
+                  <option value="Portrait">Portrait</option>
+                </select>
+              </div>
+              <div>
+                <label>Select Photographer</label>
+                <select name="photographer">
+                  <option value="Jin-Soo Park">Jin-Soo Park</option>
+                  <option value="Min-Hee Kim">Min-Hee Kim</option>
+                  <option value="Sora Lee">Sora Lee</option>
+                </select>
+              </div>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px"
+            >
+              <div>
+                <label>Date</label>
+                <input
+                  type="date"
+                  name="session_date"
+                  id="booking_date"
+                  required
+                />
+              </div>
+              <div>
+                <label>Time Slot</label>
+                <select name="session_time">
+                  <option value="09:00 AM">09:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="03:00 PM">03:00 PM</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn">Confirm Booking</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 style="color: var(--sidebar-bg)">Quick Retouching Request</h2>
+          <form action="/book" method="POST" enctype="multipart/form-data">
+            <label>Upload Photo</label>
+            <input
+              type="file"
+              name="file"
+              required
+              style="padding: 10px; background: white"
+            />
+            <label>Service Type</label>
+            <select name="service">
+              <option value="Background Removal">Background Removal</option>
+              <option value="Retouching">Retouching</option>
+            </select>
+            <button
+              type="submit"
+              class="btn"
+              style="background: var(--sidebar-bg)"
+            >
+              Upload Photo
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div id="photographers" class="section">
+        <h1>Our Top Photographers</h1>
+        <div class="gallery-grid">
+          <div class="card" style="text-align: center">
+            <div class="profile-icon" style="margin: 0 auto 15px">JP</div>
+            <h3>Jin-Soo Park</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted)">
+              Wedding Specialist
+            </p>
+          </div>
+          <div class="card" style="text-align: center">
+            <div class="profile-icon" style="margin: 0 auto 15px">SL</div>
+            <h3>Sora Lee</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted)">
+              Event Coverage
+            </p>
+          </div>
+          <div class="card" style="text-align: center">
+            <div
+              class="profile-icon"
+              style="margin: 0 auto 15px; background: #d6bcfa"
+            >
+              MK
+            </div>
+            <h3>Min-Hee Kim</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted)">
+              Portraits
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="bookings" class="section">
+        <h1>Your History</h1>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Details</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in my_bookings %}
+              <tr>
+                <td>
+                  <strong style="color: var(--primary-purple)"
+                    >{{ b.service }}</strong
+                  >
+                </td>
+                <td>
+                  <small
+                    >{{ b.date if b.date else b.filename }} {{ b.time if b.time
+                    else "" }}</small
+                  >
+                </td>
+                <td>
+                  <span class="status-badge status-{{ b.status }}"
+                    >{{ b.status }}</span
+                  >
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="gallery" class="section">
+        <h1>Photo Gallery</h1>
+        <div class="card">
+          <div class="gallery-grid">
+            <div class="gallery-item">
+              <img
+                src="/static/nature.jpeg"
+                onerror="
+                  this.src =
+                    'https://via.placeholder.com/300/e0d1f0/570a88?text=Nature'
+                "
+              />
+              <p>nature.jpeg</p>
+            </div>
+            <div class="gallery-item">
+              <img
+                src="/static/panda.jpeg"
+                onerror="
+                  this.src =
+                    'https://via.placeholder.com/300/e0d1f0/570a88?text=Panda'
+                "
+              />
+              <p>panda.jpeg</p>
+            </div>
+            <div class="gallery-item">
+              <img
+                src="/static/v.jpeg"
+                onerror="
+                  this.src =
+                    'https://via.placeholder.com/300/e0d1f0/570a88?text=V'
+                "
+              />
+              <p>v.jpeg</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="feedback" class="section">
+        <h1>Share Your Experience</h1>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+          <div class="card" style="border-top: 5px solid var(--success)">
+            <h2>Leave a Review</h2>
+            <form action="/submit_feedback" method="POST">
+              <label>Service Used</label>
+              <select name="service" required>
+                <option value="Wedding Photography">Wedding Photography</option>
+                <option value="Portrait Session">Portrait Session</option>
+                <option value="Photo Retouching">Photo Retouching</option>
+              </select>
+              <label>Rating</label>
+              <select name="rating" required>
+                <option value="5">★★★★★ (Excellent)</option>
+                <option value="4">★★★★☆ (Good)</option>
+                <option value="3">★★★☆☆ (Average)</option>
+              </select>
+              <label>Your Comments</label>
+              <textarea
+                name="comment"
+                placeholder="Tell us what you liked..."
+                required
+              ></textarea>
+              <button
+                type="submit"
+                class="btn"
+                style="background: var(--success)"
+              >
+                Submit Feedback
+              </button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>My Previous Reviews</h2>
+            <div style="max-height: 400px; overflow-y: auto">
+              {% if my_feedbacks %} {% for f in my_feedbacks %}
+              <div
+                style="
+                  background: #f8fafc;
+                  padding: 15px;
+                  border-radius: 10px;
+                  margin-bottom: 15px;
+                  border: 1px solid #e2e8f0;
+                "
+              >
+                <div style="display: flex; justify-content: space-between">
+                  <strong style="color: var(--primary-purple)"
+                    >{{ f.service }}</strong
+                  >
+                  <span style="color: #f59e0b">★ {{ f.rating }}</span>
+                </div>
+                <p
+                  style="
+                    margin: 8px 0;
+                    font-size: 0.85rem;
+                    color: #4a5568;
+                    font-style: italic;
+                  "
+                >
+                  "{{ f.comment }}"
+                </p>
+              </div>
+              {% endfor %} {% else %}
+              <p
+                style="
+                  color: var(--text-muted);
+                  text-align: center;
+                  margin-top: 20px;
+                "
+              >
+                No reviews yet.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings" class="section">
+        <h1>Account Settings</h1>
+        <div class="card">
+          <label>Full Name</label>
+          <input type="text" value="{{ name }}" readonly />
+          <label>Email Address</label>
+          <input type="text" value="{{ session.email }}" readonly />
+          <p style="color: var(--text-muted); font-size: 0.8rem">
+            Contact admin to update account information.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showSection(sectionId) {
+        document
+          .querySelectorAll(".section")
+          .forEach((s) => s.classList.remove("active"));
+        document
+          .querySelectorAll(".sidebar a")
+          .forEach((l) => l.classList.remove("active-link"));
+        document.getElementById(sectionId).classList.add("active");
+        const link = document.getElementById("link-" + sectionId);
+        if (link) link.classList.add("active-link");
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("booking_date");
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.setAttribute("min", today);
+        dateInput.value = today;
+      });
+    </script>
+  </body>
+</html>

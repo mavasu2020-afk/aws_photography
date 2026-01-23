@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photographer Booking Login</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Color Palette */
+        --deep-purple: #2e0249;
+        --vibrant-purple: #570a88;
+        --accent-pink: #a91079;
+        --white: #ffffff;
+        --light-gray: #f3f4f6;
+        --text-dark: #1f1c2c;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        /* Clean white/purple background gradient */
+        background: linear-gradient(135deg, var(--light-gray) 0%, #e0d1f0 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        width: 850px;
+        height: 550px;
+        box-shadow: 0 20px 40px rgba(46, 2, 73, 0.2);
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--white);
+      }
+
+      /* Left Side - The Purple Brand Section */
+      .left {
+        flex: 1.2;
+        background: linear-gradient(
+          45deg,
+          var(--deep-purple),
+          var(--vibrant-purple)
+        );
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        padding: 40px;
+        position: relative;
+      }
+
+      /* Optional: Overlay pattern or image */
+      .left::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("https://www.transparenttextures.com/patterns/cubes.png");
+        opacity: 0.1;
+      }
+
+      .left h1 {
+        font-size: 2rem;
+        letter-spacing: 3px;
+        z-index: 1;
+        border-bottom: 2px solid var(--accent-pink);
+        padding-bottom: 10px;
+      }
+
+      .left p {
+        z-index: 1;
+        font-weight: 300;
+        opacity: 0.8;
+      }
+
+      /* Right Side - The White Form Section */
+      .right {
+        flex: 1;
+        background: var(--white);
+        padding: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: var(--text-dark);
+      }
+
+      h2 {
+        margin-bottom: 25px;
+        font-weight: 600;
+        color: var(--deep-purple);
+      }
+
+      /* Input Fields - Purple borders on white */
+      input {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        background: var(--white);
+        color: var(--text-dark);
+        box-sizing: border-box;
+        transition: 0.3s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--vibrant-purple);
+        box-shadow: 0 0 8px rgba(87, 10, 136, 0.1);
+      }
+
+      /* Button - Deep Purple */
+      button {
+        width: 100%;
+        padding: 15px;
+        margin-top: 20px;
+        border: none;
+        border-radius: 8px;
+        background: var(--deep-purple);
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(46, 2, 73, 0.3);
+      }
+
+      button:hover {
+        background: var(--vibrant-purple);
+        transform: translateY(-2px);
+      }
+
+      .switch {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .switch span {
+        color: var(--accent-pink);
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: underline;
+      }
+
+      /* Small link for Admin Access */
+      .admin-link {
+        margin-top: 15px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .admin-link a {
+        color: #718096;
+        text-decoration: none;
+      }
+      .admin-link a:hover {
+        color: var(--vibrant-purple);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left">
+        <h1>YOJEONG</h1>
+        <p>Capturing your magical moments</p>
+      </div>
+
+      <div class="right">
+        <form id="loginForm" method="POST" action="/login">
+          <h2>Welcome Back</h2>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+          />
+          <button type="submit">Login to Studio</button>
+          <div class="switch">
+            New here? <span onclick="toggleForm()">Create Account</span>
+          </div>
+          <div class="admin-link">
+            <a href="/admin/login">Staff/Admin Login</a>
+          </div>
+        </form>
+
+        <form
+          id="signupForm"
+          method="POST"
+          action="/signup"
+          style="display: none"
+        >
+          <h2>Join the Studio</h2>
+          <input type="text" name="name" placeholder="Full Name" required />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+          />
+          <input
+            type="password"
+            name="confirm"
+            placeholder="Confirm Password"
+            required
+          />
+          <button type="submit">Register Now</button>
+          <div class="switch">
+            Already a member? <span onclick="toggleForm()">Login</span>
+          </div>
+        </form>
+      </div>
+
+      <script>
+        function toggleForm() {
+          const loginForm = document.getElementById("loginForm");
+          const signupForm = document.getElementById("signupForm");
+          if (loginForm.style.display === "none") {
+            loginForm.style.display = "block";
+            signupForm.style.display = "none";
+          } else {
+            loginForm.style.display = "none";
+            signupForm.style.display = "block";
+          }
+        }
+      </script>
+    </div>
+  </body>
+</html>

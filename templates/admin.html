@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Panel | Yojeong Photograph</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Purple & White Theme Palette */
+        --admin-bg: #f4f7fe;
+        --sidebar-bg: #2e0249; /* Deep Purple */
+        --card-bg: #ffffff;
+        --accent-purple: #570a88;
+        --light-purple: #e0d1f0;
+        --text-main: #1f1c2c;
+        --text-muted: #718096;
+
+        /* Status Colors */
+        --accent: #10b981;
+        --danger: #ef4444;
+        --blue: #3b82f6;
+        --warning: #f59e0b;
+        --star-gold: #fbbf24;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--admin-bg);
+        color: var(--text-main);
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Sidebar Styling */
+      .sidebar {
+        width: 280px;
+        background: var(--sidebar-bg);
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar h2 {
+        color: white;
+        text-align: center;
+        letter-spacing: 2px;
+        margin-bottom: 40px;
+        font-size: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 20px;
+      }
+
+      .sidebar a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        padding: 14px 18px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 0.9rem;
+        display: block;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active-link {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-weight: 600;
+      }
+
+      /* Main Content Layout */
+      .main-content {
+        flex: 1;
+        padding: 40px;
+        overflow-y: auto;
+      }
+
+      .section {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+
+      .section.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Stats Grid */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .stat-card {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+      }
+
+      .stat-card h4 {
+        margin: 0 0 5px 0;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+      }
+
+      .stat-card span {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--accent-purple);
+      }
+
+      /* Tables */
+      h1 {
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+        color: var(--sidebar-bg);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      th {
+        background: #f8fafc;
+        padding: 15px;
+        text-align: left;
+        color: var(--sidebar-bg);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--light-purple);
+      }
+
+      td {
+        padding: 15px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 0.9rem;
+        color: #4a5568;
+      }
+
+      /* Badges & Actions */
+      .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: capitalize;
+      }
+
+      .badge-pending {
+        background: #fffaf0;
+        color: var(--warning);
+      }
+      .badge-approved,
+      .badge-confirmed {
+        background: #f0fff4;
+        color: var(--accent);
+      }
+      .badge-completed {
+        background: #edf2f7;
+        color: var(--text-muted);
+      }
+      .badge-today {
+        background: var(--light-purple);
+        color: var(--sidebar-bg);
+      }
+      .badge-upcoming {
+        background: #ebf8ff;
+        color: var(--blue);
+      }
+      .badge-rejected,
+      .badge-cancelled {
+        background: #fff5f5;
+        color: var(--danger);
+      }
+
+      .action-link {
+        text-decoration: none;
+        font-weight: 600;
+        margin-right: 12px;
+        font-size: 0.8rem;
+      }
+      .thumbnail {
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--light-purple);
+      }
+      .star-rating {
+        color: var(--star-gold);
+      }
+
+      /* Modal Styling */
+      #editModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(46, 2, 73, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 400px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+      .modal-input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0 20px;
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        color: var(--text-main);
+        border-radius: 6px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>ADMIN</h2>
+      <a
+        onclick="showSection('dashboard')"
+        id="link-dashboard"
+        class="active-link"
+        >General Overview</a
+      >
+      <a onclick="showSection('uploads')" id="link-uploads"
+        >Edit Requests (Uploads)</a
+      >
+      <a onclick="showSection('sessions')" id="link-sessions"
+        >Photography Sessions</a
+      >
+      <a onclick="showSection('feedback')" id="link-feedback"
+        >Customer Feedback</a
+      >
+      <a onclick="showSection('users')" id="link-users">User Database</a>
+
+      <div style="margin-top: auto">
+        <a
+          href="/logout"
+          style="color: #feb2b2; background: rgba(255, 255, 255, 0.05)"
+          >Logout</a
+        >
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div id="dashboard" class="section active">
+        <h1>Studio Overview</h1>
+        <div class="grid">
+          <div class="stat-card">
+            <h4>Total Users</h4>
+            <span>{{ users|length }}</span>
+          </div>
+          <div class="stat-card">
+            <h4>Active Edits</h4>
+            <span
+              >{{ bookings|selectattr('status', 'equalto',
+              'Pending')|list|length }}</span
+            >
+          </div>
+          <div class="stat-card">
+            <h4>Revenue</h4>
+            <span style="color: var(--accent)">$4.2k</span>
+          </div>
+          <div class="stat-card">
+            <h4>Sessions</h4>
+            <span style="color: var(--blue)"
+              >{{ sessions|length if sessions else '0' }}</span
+            >
+          </div>
+        </div>
+        <p style="color: var(--text-muted)">
+          Logged in as: <strong>{{ session['user'] }}</strong> (Administrator)
+        </p>
+      </div>
+
+      <div id="uploads" class="section">
+        <h1>Edit Requests (Uploads)</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Service</th>
+              <th>File</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if bookings %} {% for b in bookings %}
+            <tr>
+              <td>{{ b.user_name if b.user_name else b.user }}</td>
+              <td>
+                <span style="color: var(--accent-purple); font-weight: 600"
+                  >{{ b.service }}</span
+                >
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <img
+                    src="/static/uploads/{{ b.filename }}"
+                    class="thumbnail"
+                    onerror="
+                      this.src = 'https://via.placeholder.com/50?text=IMG'
+                    "
+                  />
+                  <a
+                    href="{{ url_for('static', filename='uploads/' + b.filename) }}"
+                    target="_blank"
+                    style="
+                      color: var(--blue);
+                      text-decoration: none;
+                      font-size: 0.75rem;
+                    "
+                    >Full View</a
+                  >
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-{{ b.status.lower() }}"
+                  >{{ b.status }}</span
+                >
+              </td>
+              <td>
+                {% if b.status == "Pending" %}
+                <a
+                  href="/admin/approve/{{ b.id }}"
+                  class="action-link"
+                  style="color: var(--accent)"
+                  >Approve</a
+                >
+                <a
+                  href="/admin/reject/{{ b.id }}"
+                  class="action-link"
+                  style="color: var(--danger)"
+                  >Reject</a
+                >
+                {% else %}<span style="color: var(--text-muted)">Processed</span
+                >{% endif %}
+              </td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td
+                colspan="5"
+                style="
+                  text-align: center;
+                  padding: 30px;
+                  color: var(--text-muted);
+                "
+              >
+                No requests.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="sessions" class="section">
+        <h1>Photography Sessions</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Type</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if sessions %} {% for s in sessions %} {% set s_status =
+            s.status.lower() %}
+            <tr>
+              <td>{{ s.user_name if s.user_name else s.user }}</td>
+              <td><strong>{{ s.service if s.service else s.type }}</strong></td>
+              <td>{{ s.date }} {{ "@ " + s.time if s.time else "" }}</td>
+              <td>
+                <span
+                  class="badge badge-{{ s_status if s_status in ['pending','confirmed','cancelled','completed'] else 'upcoming' }}"
+                >
+                  {{ s.status }}
+                </span>
+              </td>
+              <td>
+                {% if s_status == "pending" %}
+                <a
+                  href="/admin/confirm_session/{{ s.id }}"
+                  class="action-link"
+                  style="color: var(--accent)"
+                  >Confirm</a
+                >
+                <a
+                  href="/admin/cancel_session/{{ s.id }}"
+                  class="action-link"
+                  style="color: var(--danger)"
+                  >Cancel</a
+                >
+                {% elif s_status == "completed" %}
+                <span style="color: var(--text-muted)">Finalized</span>
+                {% else %}
+                <a
+                  href="/admin/complete_session/{{ s.id }}"
+                  class="action-link"
+                  style="color: var(--blue)"
+                  >Mark Done</a
+                >
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td
+                colspan="5"
+                style="
+                  text-align: center;
+                  padding: 30px;
+                  color: var(--text-muted);
+                "
+              >
+                No sessions.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="feedback" class="section">
+        <h1>Customer Feedback</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Rating</th>
+              <th>Comment</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if feedbacks %} {% for f in feedbacks %}
+            <tr>
+              <td>{{ f.user_name }}</td>
+              <td>
+                <span class="star-rating"
+                  >{% for i in range(f.rating) %}★{% endfor %}</span
+                >
+              </td>
+              <td
+                style="
+                  font-style: italic;
+                  color: #4a5568;
+                  max-width: 300px;
+                  font-size: 0.85rem;
+                "
+              >
+                "{{ f.comment }}"
+              </td>
+              <td>
+                <a
+                  href="/admin/delete_feedback/{{ f.id }}"
+                  style="
+                    color: var(--danger);
+                    text-decoration: none;
+                    font-size: 0.8rem;
+                  "
+                  >Delete</a
+                >
+              </td>
+            </tr>
+            {% endfor %} {% else %}
+            <tr>
+              <td
+                colspan="4"
+                style="
+                  text-align: center;
+                  padding: 30px;
+                  color: var(--text-muted);
+                "
+              >
+                No feedback.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="users" class="section">
+        <h1>User Database</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Email Address</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for email, info in users.items() %}
+            <tr>
+              <td>{{ info.name }}</td>
+              <td>{{ email }}</td>
+              <td>
+                <button
+                  onclick="openEditModal('{{ info.name }}', '{{ email }}')"
+                  style="
+                    background: none;
+                    border: 1px solid var(--accent-purple);
+                    border-radius: 4px;
+                    padding: 4px 10px;
+                    color: var(--accent-purple);
+                    cursor: pointer;
+                    font-weight: 600;
+                  "
+                >
+                  Edit
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="editModal">
+      <div class="modal-content">
+        <h2 style="margin-top: 0; color: var(--sidebar-bg)">Edit User</h2>
+        <form action="/edit_user" method="POST">
+          <input type="hidden" name="old_email" id="old_email" />
+          <label style="font-weight: 600; font-size: 0.8rem">Full Name</label>
+          <input
+            type="text"
+            name="new_name"
+            id="edit_name"
+            class="modal-input"
+            required
+          />
+          <label style="font-weight: 600; font-size: 0.8rem"
+            >Email Address</label
+          >
+          <input
+            type="email"
+            name="new_email"
+            id="edit_email"
+            class="modal-input"
+            required
+          />
+          <div style="display: flex; gap: 10px">
+            <button
+              type="submit"
+              style="
+                flex: 1;
+                background: var(--sidebar-bg);
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+              "
+            >
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onclick="closeModal()"
+              style="
+                flex: 1;
+                background: #edf2f7;
+                color: #4a5568;
+                border: none;
+                padding: 12px;
+                border-radius: 6px;
+                cursor: pointer;
+              "
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function showSection(sectionId) {
+        document
+          .querySelectorAll(".section")
+          .forEach((s) => s.classList.remove("active"));
+        document
+          .querySelectorAll(".sidebar a")
+          .forEach((l) => l.classList.remove("active-link"));
+        document.getElementById(sectionId).classList.add("active");
+        document
+          .getElementById("link-" + sectionId)
+          .classList.add("active-link");
+      }
+
+      function openEditModal(name, email) {
+        document.getElementById("editModal").style.display = "flex";
+        document.getElementById("edit_name").value = name;
+        document.getElementById("edit_email").value = email;
+        document.getElementById("old_email").value = email;
+      }
+
+      function closeModal() {
+        document.getElementById("editModal").style.display = "none";
+      }
+
+      window.onclick = function (e) {
+        if (e.target == document.getElementById("editModal")) closeModal();
+      };
+    </script>
+  </body>
+</html>
