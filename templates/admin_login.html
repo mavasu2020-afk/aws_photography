@@ -110,12 +110,30 @@
       .back-link:hover {
         text-decoration: underline;
       }
+
+      /* Flash message styling */
+      .flash-messages {
+        color: red;
+        list-style: none;
+        padding: 0;
+        margin-bottom: 15px;
+        text-align: left;
+      }
     </style>
   </head>
   <body>
     <div class="login-container">
       <h2>Admin Portal</h2>
       <p>Please enter your administrator credentials</p>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <ul class="flash-messages">
+        {% for msg in messages %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
 
       <form action="/admin/login" method="POST">
         <div class="form-group">
