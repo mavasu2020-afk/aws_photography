@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import os
 import boto3
 import uuid
+import base64
 from werkzeug.utils import secure_filename
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
@@ -21,12 +22,12 @@ admin_table = dynamodb.Table('AdminUsers')
 bookings_table = dynamodb.Table('Bookings')
 sessions_table = dynamodb.Table('Sessions')
 feedback_table = dynamodb.Table('Feedback')
+files_table = dynamodb.Table('Files')  # NEW: for storing file data
 
 SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:604665149129:aws_capstone_topic' 
 
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Max file size: 100KB (DynamoDB item limit is 400KB)
+MAX_FILE_SIZE = 100 * 1024
 
 # --- Helper Functions ---
 def send_notification(subject, message):
@@ -34,6 +35,10 @@ def send_notification(subject, message):
         sns.publish(TopicArn=SNS_TOPIC_ARN, Subject=subject, Message=message)
     except ClientError as e:
         print(f"SNS Error: {e}")
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'pdf'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- Main Routes ---
 @app.route('/')
@@ -106,20 +111,81 @@ def book_retouch():
     file = request.files.get('file')
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         
+        # Check file size
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            flash(f"File too large! Max size is 100KB")
+            return redirect(url_for('dashboard'))
+        
+        if not allowed_file(filename):
+            flash("Invalid file type! Allowed: jpg, png, gif, pdf")
+            return redirect(url_for('dashboard'))
+        
+        # Read file and encode to base64
+        file_data = file.read()
+        file_b64 = base64.b64encode(file_data).decode('utf-8')
+        
+        file_id = str(uuid.uuid4())[:8]
         booking_id = str(uuid.uuid4())[:8]
-        bookings_table.put_item(Item={
-            'id': booking_id,
-            'user': session['email'],
-            'user_name': session['user'],
-            'service': f"Retouch: {request.form.get('service')}",
-            'filename': filename,
-            'status': 'Pending'
-        })
-        send_notification("New Retouching Request", f"{session['user']} uploaded {filename}")
+        
+        # Store file in DynamoDB
+        try:
+            files_table.put_item(Item={
+                'id': file_id,
+                'filename': filename,
+                'data': file_b64,
+                'file_type': filename.rsplit('.', 1)[1].lower(),
+                'size': file_size,
+                'user': session['email'],
+                'created_at': datetime.now().isoformat()
+            })
+            
+            # Create booking with file reference
+            bookings_table.put_item(Item={
+                'id': booking_id,
+                'user': session['email'],
+                'user_name': session['user'],
+                'service': f"Retouch: {request.form.get('service')}",
+                'filename': filename,
+                'file_id': file_id,
+                'status': 'Pending',
+                'created_at': datetime.now().isoformat()
+            })
+            send_notification("New Retouching Request", f"{session['user']} uploaded {filename}")
+            flash("File uploaded successfully!")
+        except ClientError as e:
+            flash(f"Upload failed: {str(e)}")
     
     return redirect(url_for('dashboard'))
+
+@app.route('/download/<file_id>')
+def download_file(file_id):
+    if session.get('role') != 'user' and session.get('role') != 'admin':
+        return redirect(url_for('login'))
+    
+    try:
+        resp = files_table.get_item(Key={'id': file_id})
+        if 'Item' not in resp:
+            flash("File not found!")
+            return redirect(url_for('dashboard'))
+        
+        item = resp['Item']
+        file_data = base64.b64decode(item['data'])
+        
+        from flask import send_file
+        from io import BytesIO
+        return send_file(
+            BytesIO(file_data),
+            as_attachment=True,
+            download_name=item['filename']
+        )
+    except Exception as e:
+        flash(f"Download failed: {str(e)}")
+        return redirect(url_for('dashboard'))
 
 @app.route('/book_session', methods=['POST'])
 def book_session():
@@ -141,9 +207,11 @@ def book_session():
         'service': f"{request.form.get('session_type')} (with {request.form.get('photographer')})",
         'date': date_str,
         'time': request.form.get('session_time'),
-        'status': 'Pending'
+        'status': 'Pending',
+        'created_at': datetime.now().isoformat()
     })
     send_notification("New Session Booking", f"{session['user']} booked a session for {date_str}")
+    flash("Session booked successfully!")
     
     return redirect(url_for('dashboard'))
 
@@ -159,9 +227,11 @@ def submit_feedback():
         'user_email': session['email'],
         'service': request.form.get('service'),
         'rating': int(request.form.get('rating')),
-        'comment': request.form.get('comment')
+        'comment': request.form.get('comment'),
+        'created_at': datetime.now().isoformat()
     })
     send_notification("New Feedback", f"{session['user']} left a review")
+    flash("Thank you for your feedback!")
     
     return redirect(url_for('dashboard'))
 
