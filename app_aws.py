@@ -14,7 +14,7 @@ app.secret_key = 'yojeong_secret_key'
 # --- AWS Configuration ---
 REGION = 'us-east-1' 
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
-sns = boto3.client('sns', region_name=REGION)
+# SNS CLIENT REMOVED
 
 # DynamoDB Tables
 users_table = dynamodb.Table('Users')
@@ -22,19 +22,13 @@ admin_table = dynamodb.Table('AdminUsers')
 bookings_table = dynamodb.Table('Bookings')
 sessions_table = dynamodb.Table('Sessions')
 feedback_table = dynamodb.Table('Feedback')
-files_table = dynamodb.Table('Files')  # NEW: for storing file data
+files_table = dynamodb.Table('Files')
 
-SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:604665149129:aws_capstone_topic' 
-
-# Max file size: 100KB (DynamoDB item limit is 400KB)
+# MAX_FILE_SIZE and SNS_TOPIC_ARN variables removed if no longer needed
 MAX_FILE_SIZE = 100 * 1024
 
 # --- Helper Functions ---
-def send_notification(subject, message):
-    try:
-        sns.publish(TopicArn=SNS_TOPIC_ARN, Subject=subject, Message=message)
-    except ClientError as e:
-        print(f"SNS Error: {e}")
+# send_notification FUNCTION REMOVED
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'pdf'}
@@ -67,7 +61,7 @@ def signup():
         'password': password, 
         'role': 'user'
     })
-    send_notification("New Studio Member", f"{name} ({email}) just joined Yojeong Photograph.")
+    # Notification call removed
     flash("Account created! Please login.")
     return redirect(url_for('login'))
 
@@ -92,10 +86,7 @@ def dashboard():
         return redirect(url_for('login'))
     
     email = session['email']
-    
-    # Fetch user bookings and sessions
     bookings_resp = bookings_table.scan(FilterExpression=Attr('user') == email)
-    sessions_resp = sessions_table.scan(FilterExpression=Attr('user') == email)
     feedbacks_resp = feedback_table.scan(FilterExpression=Attr('user_email') == email)
     
     return render_template('dashboard.html',
@@ -111,8 +102,6 @@ def book_retouch():
     file = request.files.get('file')
     if file:
         filename = secure_filename(file.filename)
-        
-        # Check file size
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
@@ -125,14 +114,11 @@ def book_retouch():
             flash("Invalid file type! Allowed: jpg, png, gif, pdf")
             return redirect(url_for('dashboard'))
         
-        # Read file and encode to base64
         file_data = file.read()
         file_b64 = base64.b64encode(file_data).decode('utf-8')
-        
         file_id = str(uuid.uuid4())[:8]
         booking_id = str(uuid.uuid4())[:8]
         
-        # Store file in DynamoDB
         try:
             files_table.put_item(Item={
                 'id': file_id,
@@ -144,7 +130,6 @@ def book_retouch():
                 'created_at': datetime.now().isoformat()
             })
             
-            # Create booking with file reference
             bookings_table.put_item(Item={
                 'id': booking_id,
                 'user': session['email'],
@@ -155,7 +140,7 @@ def book_retouch():
                 'status': 'Pending',
                 'created_at': datetime.now().isoformat()
             })
-            send_notification("New Retouching Request", f"{session['user']} uploaded {filename}")
+            # Notification call removed
             flash("File uploaded successfully!")
         except ClientError as e:
             flash(f"Upload failed: {str(e)}")
@@ -164,7 +149,7 @@ def book_retouch():
 
 @app.route('/download/<file_id>')
 def download_file(file_id):
-    if session.get('role') != 'user' and session.get('role') != 'admin':
+    if session.get('role') not in ['user', 'admin']:
         return redirect(url_for('login'))
     
     try:
@@ -210,9 +195,8 @@ def book_session():
         'status': 'Pending',
         'created_at': datetime.now().isoformat()
     })
-    send_notification("New Session Booking", f"{session['user']} booked a session for {date_str}")
+    # Notification call removed
     flash("Session booked successfully!")
-    
     return redirect(url_for('dashboard'))
 
 @app.route('/submit_feedback', methods=['POST'])
@@ -230,9 +214,8 @@ def submit_feedback():
         'comment': request.form.get('comment'),
         'created_at': datetime.now().isoformat()
     })
-    send_notification("New Feedback", f"{session['user']} left a review")
+    # Notification call removed
     flash("Thank you for your feedback!")
-    
     return redirect(url_for('dashboard'))
 
 # --- Admin Routes ---
@@ -281,7 +264,7 @@ def approve(booking_id):
         ExpressionAttributeNames={'#st': 'status'},
         ExpressionAttributeValues={':s': 'Confirmed'}
     )
-    send_notification("Booking Approved", f"Booking {booking_id} approved")
+    # Notification call removed
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/reject/<booking_id>')
@@ -313,7 +296,6 @@ def confirm_session(session_id):
             ExpressionAttributeNames={'#st': 'status'},
             ExpressionAttributeValues={':s': status}
         )
-    
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/complete_session/<session_id>')
