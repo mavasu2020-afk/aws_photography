@@ -5,7 +5,7 @@ import uuid
 import base64
 from werkzeug.utils import secure_filename
 from boto3.dynamodb.conditions import Key, Attr
-from botocore.exceptions import ClientError
+# from botocore.exceptions import ClientError
 from datetime import datetime
 
 app = Flask(__name__)
