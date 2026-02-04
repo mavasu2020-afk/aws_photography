@@ -3,10 +3,25 @@ import os
 import boto3
 import uuid
 import base64
+from decimal import Decimal
 from werkzeug.utils import secure_filename
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from datetime import datetime
+
+# Helper to convert DynamoDB Decimal to Python int/float
+def convert_decimal(obj):
+    """Recursively convert Decimal objects to int or float"""
+    if isinstance(obj, Decimal):
+        if obj % 1 == 0:
+            return int(obj)
+        else:
+            return float(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_decimal(item) for item in obj]
+    return obj
 
 app = Flask(__name__)
 app.secret_key = 'yojeong_secret_key'
@@ -68,11 +83,13 @@ def login():
         password = request.form['password']
 
         response = users_table.get_item(Key={'email': email})
-        if 'Item' in response and response['Item']['password'] == password:
-            session['user'] = response['Item']['name']
-            session['email'] = email
-            session['role'] = 'user'
-            return redirect(url_for('dashboard'))
+        if 'Item' in response:
+            user = convert_decimal(response['Item'])
+            if user['password'] == password:
+                session['user'] = user['name']
+                session['email'] = email
+                session['role'] = 'user'
+                return redirect(url_for('dashboard'))
 
         flash("Invalid user credentials.")
     return render_template('login.html')
@@ -95,14 +112,15 @@ def dashboard():
         FilterExpression=Attr('user_email').eq(email)
     )
 
-    # Combine bookings and sessions for display
-    my_bookings = bookings_resp.get('Items', []) + sessions_resp.get('Items', [])
+    # Combine bookings and sessions for display, convert Decimals
+    my_bookings = [convert_decimal(b) for b in bookings_resp.get('Items', [])] + [convert_decimal(s) for s in sessions_resp.get('Items', [])]
+    my_feedbacks = [convert_decimal(f) for f in feedbacks_resp.get('Items', [])]
 
     return render_template(
         'dashboard.html',
         name=session['user'],
         my_bookings=my_bookings,
-        my_feedbacks=feedbacks_resp.get('Items', [])
+        my_feedbacks=my_feedbacks
     )
 
 @app.route('/book', methods=['POST'])
@@ -238,11 +256,13 @@ def admin_login():
         password = request.form['password']
 
         response = admin_table.get_item(Key={'email': email})
-        if 'Item' in response and response['Item']['password'] == password:
-            session['user'] = response['Item']['name']
-            session['email'] = email
-            session['role'] = 'admin'
-            return redirect(url_for('admin_panel'))
+        if 'Item' in response:
+            user = convert_decimal(response['Item'])
+            if user['password'] == password:
+                session['user'] = user['name']
+                session['email'] = email
+                session['role'] = 'admin'
+                return redirect(url_for('admin_panel'))
 
         flash("Access Denied: Admin credentials invalid.")
     return render_template('admin_login.html')
@@ -252,10 +272,10 @@ def admin_panel():
     if session.get('role') != 'admin':
         return redirect(url_for('admin_login'))
 
-    users = users_table.scan().get('Items', [])
-    bookings = bookings_table.scan().get('Items', [])
-    sessions = sessions_table.scan().get('Items', [])
-    feedbacks = feedback_table.scan().get('Items', [])
+    users = [convert_decimal(u) for u in users_table.scan().get('Items', [])]
+    bookings = [convert_decimal(b) for b in bookings_table.scan().get('Items', [])]
+    sessions = [convert_decimal(s) for s in sessions_table.scan().get('Items', [])]
+    feedbacks = [convert_decimal(f) for f in feedback_table.scan().get('Items', [])]
 
     users_dict = {u['email']: {'name': u['name']} for u in users}
 
