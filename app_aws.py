@@ -88,14 +88,20 @@ def dashboard():
     bookings_resp = bookings_table.scan(
         FilterExpression=Attr('user').eq(email)
     )
+    sessions_resp = sessions_table.scan(
+        FilterExpression=Attr('user').eq(email)
+    )
     feedbacks_resp = feedback_table.scan(
         FilterExpression=Attr('user_email').eq(email)
     )
 
+    # Combine bookings and sessions for display
+    my_bookings = bookings_resp.get('Items', []) + sessions_resp.get('Items', [])
+
     return render_template(
         'dashboard.html',
         name=session['user'],
-        my_bookings=bookings_resp.get('Items', []),
+        my_bookings=my_bookings,
         my_feedbacks=feedbacks_resp.get('Items', [])
     )
 
@@ -266,12 +272,15 @@ def approve(booking_id):
     if session.get('role') != 'admin':
         return "Unauthorized", 403
 
-    bookings_table.update_item(
-        Key={'id': booking_id},
-        UpdateExpression="set #st = :s",
-        ExpressionAttributeNames={'#st': 'status'},
-        ExpressionAttributeValues={':s': 'Confirmed'}
-    )
+    try:
+        bookings_table.update_item(
+            Key={'id': str(booking_id)},
+            UpdateExpression="set #st = :s",
+            ExpressionAttributeNames={'#st': 'status'},
+            ExpressionAttributeValues={':s': 'Confirmed'}
+        )
+    except Exception as e:
+        flash(f"Error updating booking: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/reject/<booking_id>')
@@ -279,12 +288,15 @@ def reject(booking_id):
     if session.get('role') != 'admin':
         return "Unauthorized", 403
 
-    bookings_table.update_item(
-        Key={'id': booking_id},
-        UpdateExpression="set #st = :s",
-        ExpressionAttributeNames={'#st': 'status'},
-        ExpressionAttributeValues={':s': 'Cancelled'}
-    )
+    try:
+        bookings_table.update_item(
+            Key={'id': str(booking_id)},
+            UpdateExpression="set #st = :s",
+            ExpressionAttributeNames={'#st': 'status'},
+            ExpressionAttributeValues={':s': 'Cancelled'}
+        )
+    except Exception as e:
+        flash(f"Error rejecting booking: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/confirm_session/<session_id>')
@@ -293,16 +305,18 @@ def confirm_session(session_id):
         return "Unauthorized", 403
 
     today_str = datetime.now().strftime('%Y-%m-%d')
-    resp = sessions_table.get_item(Key={'id': session_id})
-
-    if 'Item' in resp:
-        status = 'Today' if resp['Item']['date'] == today_str else 'Upcoming'
-        sessions_table.update_item(
-            Key={'id': session_id},
-            UpdateExpression="set #st = :s",
-            ExpressionAttributeNames={'#st': 'status'},
-            ExpressionAttributeValues={':s': status}
-        )
+    try:
+        resp = sessions_table.get_item(Key={'id': str(session_id)})
+        if 'Item' in resp:
+            status = 'Today' if resp['Item']['date'] == today_str else 'Upcoming'
+            sessions_table.update_item(
+                Key={'id': str(session_id)},
+                UpdateExpression="set #st = :s",
+                ExpressionAttributeNames={'#st': 'status'},
+                ExpressionAttributeValues={':s': status}
+            )
+    except Exception as e:
+        flash(f"Error confirming session: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/complete_session/<session_id>')
@@ -310,12 +324,15 @@ def complete_session(session_id):
     if session.get('role') != 'admin':
         return "Unauthorized", 403
 
-    sessions_table.update_item(
-        Key={'id': session_id},
-        UpdateExpression="set #st = :s",
-        ExpressionAttributeNames={'#st': 'status'},
-        ExpressionAttributeValues={':s': 'Completed'}
-    )
+    try:
+        sessions_table.update_item(
+            Key={'id': str(session_id)},
+            UpdateExpression="set #st = :s",
+            ExpressionAttributeNames={'#st': 'status'},
+            ExpressionAttributeValues={':s': 'Completed'}
+        )
+    except Exception as e:
+        flash(f"Error completing session: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/cancel_session/<session_id>')
@@ -323,12 +340,15 @@ def cancel_session(session_id):
     if session.get('role') != 'admin':
         return "Unauthorized", 403
 
-    sessions_table.update_item(
-        Key={'id': session_id},
-        UpdateExpression="set #st = :s",
-        ExpressionAttributeNames={'#st': 'status'},
-        ExpressionAttributeValues={':s': 'Cancelled'}
-    )
+    try:
+        sessions_table.update_item(
+            Key={'id': str(session_id)},
+            UpdateExpression="set #st = :s",
+            ExpressionAttributeNames={'#st': 'status'},
+            ExpressionAttributeValues={':s': 'Cancelled'}
+        )
+    except Exception as e:
+        flash(f"Error cancelling session: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/edit_user', methods=['POST'])
